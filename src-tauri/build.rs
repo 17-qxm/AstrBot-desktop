@@ -91,8 +91,10 @@ fn runtime_manifest_sha256() -> String {
 fn main() {
     let marker_path = Path::new("windows").join("portable-runtime-marker.txt");
     let tauri_config_path = Path::new(TAURI_CONFIG_PATH);
+    let icon_path = Path::new("icons").join("icon.ico");
     println!("cargo:rerun-if-changed={}", marker_path.display());
     println!("cargo:rerun-if-changed={}", tauri_config_path.display());
+    println!("cargo:rerun-if-changed={}", icon_path.display());
 
     let marker = fs::read_to_string(&marker_path)
         .unwrap_or_else(|error| panic!("failed to read {}: {error}", marker_path.display()));
