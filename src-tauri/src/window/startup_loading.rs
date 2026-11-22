@@ -3,7 +3,7 @@ use std::env;
 use tauri::{AppHandle, Manager};
 use url::Url;
 
-use crate::{startup_mode, BackendState};
+use crate::{startup_mode, BackendState, DesktopSettingsCache};
 
 pub fn should_apply_startup_loading_mode(webview_label: &str, page_url: &Url) -> bool {
     if webview_label != "main" {
@@ -33,6 +33,23 @@ pub fn apply_startup_loading_mode<F>(
     );
     if let Err(error) = webview.eval(&script) {
         log(&format!("failed to apply startup loading mode: {error}"));
+    }
+}
+
+pub fn apply_startup_theme_mode<F>(
+    app_handle: &AppHandle,
+    webview: &tauri::Webview<tauri::Wry>,
+    log: F,
+) where
+    F: Fn(&str) + Copy,
+{
+    let theme_mode = app_handle.state::<DesktopSettingsCache>().get().theme_mode;
+    let mode_js = serde_json::to_string(theme_mode.as_str()).expect("serializing theme mode");
+    let script = format!(
+        "if (typeof window !== 'undefined' && typeof window.__astrbotSetStartupThemeMode === 'function') {{ window.__astrbotSetStartupThemeMode({mode_js}); }}"
+    );
+    if let Err(error) = webview.eval(&script) {
+        log(&format!("failed to apply startup theme mode: {error}"));
     }
 }
 

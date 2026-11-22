@@ -36,6 +36,7 @@
     CHECK_APP_UPDATE: 'desktop_bridge_check_app_update',
     INSTALL_APP_UPDATE: 'desktop_bridge_install_app_update',
     SET_WINDOW_THEME: 'desktop_bridge_set_window_theme',
+    SET_STARTUP_THEME_MODE: 'desktop_bridge_set_startup_theme_mode',
     MINIMIZE_WINDOW: 'desktop_bridge_minimize_window',
     TOGGLE_MAXIMIZE_WINDOW: 'desktop_bridge_toggle_maximize_window',
     CLOSE_WINDOW: 'desktop_bridge_close_window',
@@ -448,6 +449,7 @@
   const TOKEN_STORAGE_KEY = 'token';
   const USER_STORAGE_KEY = 'user';
   const SHELL_LOCALE_STORAGE_KEY = 'astrbot-locale';
+  const THEME_MODE_STORAGE_KEY = 'themeMode';
   const DESKTOP_AUTH_BOOTSTRAP_RELOAD_KEY =
     'astrbot:desktop-auth-bootstrap-reloaded:v1';
   const DESKTOP_AUTH_REFRESH_INTERVAL_MS = 6 * 60 * 60 * 1000;
@@ -479,6 +481,12 @@
   const syncShellLocale = (value = getStoredValue(SHELL_LOCALE_STORAGE_KEY)) =>
     invokeBridge(BRIDGE_COMMANDS.SET_SHELL_LOCALE, {
       locale: value,
+    });
+  const normalizeThemeMode = (value) =>
+    value === 'light' || value === 'dark' || value === 'system' ? value : 'system';
+  const syncThemeMode = (value = getStoredValue(THEME_MODE_STORAGE_KEY)) =>
+    invokeBridge(BRIDGE_COMMANDS.SET_STARTUP_THEME_MODE, {
+      themeMode: normalizeThemeMode(value),
     });
 
   const shouldReloadAfterDesktopAuthBootstrap = () => {
@@ -1061,6 +1069,8 @@
             triggerPluginUiExtensions();
           } else if (key === SHELL_LOCALE_STORAGE_KEY) {
             void syncShellLocale(getStoredValue(SHELL_LOCALE_STORAGE_KEY));
+          } else if (key === THEME_MODE_STORAGE_KEY) {
+            void syncThemeMode(getStoredValue(THEME_MODE_STORAGE_KEY));
           }
         };
       }
@@ -1072,6 +1082,8 @@
             void refreshDesktopAuthSession();
           } else if (key === SHELL_LOCALE_STORAGE_KEY) {
             void syncShellLocale(null);
+          } else if (key === THEME_MODE_STORAGE_KEY) {
+            void syncThemeMode('system');
           }
         };
       }
@@ -1080,6 +1092,7 @@
           rawClear();
           void syncAuthToken(null);
           void syncShellLocale(null);
+          void syncThemeMode('system');
           void refreshDesktopAuthSession();
         };
       }
@@ -1192,6 +1205,7 @@
   ensureDefaultChatTransportMode();
   void syncAuthToken();
   void syncShellLocale();
+  void syncThemeMode();
   void refreshDesktopAuthSession();
   window.setInterval(refreshDesktopAuthSession, DESKTOP_AUTH_REFRESH_INTERVAL_MS);
 })();

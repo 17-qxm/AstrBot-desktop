@@ -10,8 +10,10 @@
 
 - Node.js
 - `pnpm`
-- Rust toolchain
+- Rust toolchain `1.100` or newer
 - Tauri 所需系统依赖
+
+Windows 构建使用 rustup 提供的 MSVC 工具链（`x86_64-pc-windows-msvc`）。即使系统 PATH 中存在 MSYS2 或 MinGW，也不需要在 MSYS2 环境中运行 Cargo；Cargo 的 Rust 编译器和链接器由 rustup 工具链提供。
 
 可先运行下面的命令检查本机工具链：
 

@@ -228,6 +228,11 @@ fn handle_page_load_finished(webview: &tauri::Webview<tauri::Wry>, payload: &Pag
                 STARTUP_MODE_ENV,
                 append_startup_log,
             );
+            window::startup_loading::apply_startup_theme_mode(
+                webview.app_handle(),
+                webview,
+                append_startup_log,
+            );
         }
         app_runtime_events::PageLoadAction::None => {}
     }
@@ -330,6 +335,7 @@ pub(crate) fn run() {
             crate::bridge::commands::desktop_bridge_open_external_url,
             crate::bridge::commands::desktop_bridge_open_repair_install,
             crate::bridge::commands::desktop_bridge_set_window_theme,
+            crate::bridge::commands::desktop_bridge_set_startup_theme_mode,
             crate::bridge::commands::desktop_bridge_minimize_window,
             crate::bridge::commands::desktop_bridge_toggle_maximize_window,
             crate::bridge::commands::desktop_bridge_close_window,

@@ -28,7 +28,7 @@ use crate::bridge::updater_types::{
 use crate::{
     append_desktop_log, restart_backend_flow, runtime_paths, shell_locale, tray, update_channel,
     AtomicFlagGuard, BackendBridgeResult, BackendBridgeState, BackendState,
-    DesktopAuthBridgeResult, DEFAULT_SHELL_LOCALE,
+    DesktopAuthBridgeResult, DesktopSettingsCache, ThemeMode, DEFAULT_SHELL_LOCALE,
 };
 
 fn resolve_update_channel(app_handle: &AppHandle) -> update_channel::UpdateChannel {
@@ -565,6 +565,36 @@ pub(crate) fn desktop_bridge_set_window_theme(
             ok: false,
             reason: Some(error.to_string()),
         },
+    }
+}
+
+#[tauri::command]
+pub(crate) fn desktop_bridge_set_startup_theme_mode(
+    app_handle: AppHandle,
+    theme_mode: String,
+) -> BackendBridgeResult {
+    let Some(theme_mode) = ThemeMode::parse(&theme_mode) else {
+        return BackendBridgeResult {
+            ok: false,
+            reason: Some("Invalid theme mode. Expected 'light', 'dark', or 'system'.".to_string()),
+        };
+    };
+
+    let packaged_root_dir = runtime_paths::default_packaged_root_dir();
+    match app_handle.state::<DesktopSettingsCache>().update(|_| {
+        crate::desktop_settings::write_theme_mode(packaged_root_dir.as_deref(), theme_mode)
+    }) {
+        Ok(()) => BackendBridgeResult {
+            ok: true,
+            reason: None,
+        },
+        Err(error) => {
+            append_desktop_log(&format!("failed to persist startup theme mode: {error}"));
+            BackendBridgeResult {
+                ok: false,
+                reason: Some(error),
+            }
+        }
     }
 }
 

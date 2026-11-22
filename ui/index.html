@@ -15,6 +15,17 @@
         --card: #ffffff;
         --border: #e5e7eb;
         --accent: #3c96ca;
+        --accent-light: #5aa9d6;
+      }
+
+      :root[data-theme="dark"] {
+        --bg: #1a1a1a;
+        --text: #e8eaed;
+        --muted: #ffffffcc;
+        --card: #242424;
+        --border: #333333ee;
+        --accent: #5ba4d4;
+        --accent-light: #84c9ea;
       }
 
       * {
@@ -87,7 +98,7 @@
         width: 45%;
         height: 100%;
         border-radius: 999px;
-        background: linear-gradient(90deg, #3c96ca 0%, #5aa9d6 100%);
+        background: linear-gradient(90deg, var(--accent) 0%, var(--accent-light) 100%);
         animation: slide 1.25s ease-in-out infinite;
       }
 
@@ -192,6 +203,30 @@
         </div>
       </section>
     </main>
+    <script>
+      (() => {
+        let themeMode = "system";
+        const resolveTheme = () =>
+          themeMode === "dark" ||
+          (themeMode === "system" && window.matchMedia?.("(prefers-color-scheme: dark)").matches)
+            ? "dark"
+            : "light";
+        const applyTheme = () => {
+          const theme = resolveTheme();
+          document.documentElement.dataset.theme = theme;
+          document.documentElement.style.colorScheme = theme;
+        };
+        window.__astrbotSetStartupThemeMode = (mode) => {
+          themeMode = mode === "light" || mode === "dark" || mode === "system" ? mode : "system";
+          applyTheme();
+        };
+        window.__astrbotSetStartupThemeMode("system");
+        const mediaQuery = window.matchMedia?.("(prefers-color-scheme: dark)");
+        mediaQuery?.addEventListener?.("change", () => {
+          if (themeMode === "system") applyTheme();
+        });
+      })();
+    </script>
     <script src="./startup-copy.js"></script>
     <script>
       (() => {

@@ -1,6 +1,6 @@
 use std::{
     io::{ErrorKind, Read, Write},
-    net::{SocketAddr, TcpStream, ToSocketAddrs},
+    net::{SocketAddr, TcpListener, TcpStream, ToSocketAddrs},
     time::{Duration, Instant},
 };
 
@@ -15,7 +15,7 @@ use crate::{
 const MAX_BACKEND_HTTP_HEADER_BYTES: usize = 64 * 1024;
 const MAX_BACKEND_HTTP_BODY_BYTES: usize = 32 * 1024 * 1024;
 
-/// Require refused connections on every resolved address before permitting a respawn.
+/// Require a refused connection or an available local bind before permitting a respawn.
 fn confirm_backend_endpoint_available_with_resolver<F>(
     backend_url: &str,
     resolver_worker: &std::sync::Mutex<Option<std::thread::JoinHandle<()>>>,
@@ -106,6 +106,19 @@ where
                 ));
             }
             Err(error) if error.kind() == ErrorKind::ConnectionRefused => {}
+            Err(error) if address.ip().is_loopback() => match TcpListener::bind(address) {
+                Ok(listener) => drop(listener),
+                Err(bind_error) if bind_error.kind() == ErrorKind::AddrInUse => {
+                    return Err(format!(
+                            "Backend endpoint {display_url} is already in use. Stop the existing backend before starting another."
+                        ));
+                }
+                Err(bind_error) => {
+                    return Err(inconclusive(&format!(
+                            "connection to {address} failed: {error}; local bind check failed: {bind_error}"
+                        )));
+                }
+            },
             Err(error) => {
                 return Err(inconclusive(&format!(
                     "connection to {address} failed: {error}"

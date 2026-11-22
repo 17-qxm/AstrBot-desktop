@@ -42,7 +42,7 @@ pub(crate) use app_types::{
     AtomicFlagGuard, BackendBridgeResult, BackendBridgeState, BackendState,
     DesktopAuthBridgeResult, LaunchPlan, RuntimeManifest, RuntimeWebuiAttestation, TrayMenuState,
 };
-pub(crate) use desktop_settings::DesktopSettingsCache;
+pub(crate) use desktop_settings::{DesktopSettingsCache, ThemeMode};
 
 fn main() {
     #[cfg(target_os = "linux")]

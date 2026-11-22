@@ -48,6 +48,52 @@ pub(crate) enum CloseAction {
     Exit,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub(crate) enum ThemeMode {
+    Light,
+    Dark,
+    System,
+}
+
+impl ThemeMode {
+    pub(crate) fn parse(value: &str) -> Option<Self> {
+        match value.trim().to_ascii_lowercase().as_str() {
+            "light" => Some(Self::Light),
+            "dark" => Some(Self::Dark),
+            "system" => Some(Self::System),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn as_str(self) -> &'static str {
+        match self {
+            Self::Light => "light",
+            Self::Dark => "dark",
+            Self::System => "system",
+        }
+    }
+}
+
+fn default_theme_mode() -> ThemeMode {
+    ThemeMode::System
+}
+
+fn is_default_theme_mode(theme_mode: &ThemeMode) -> bool {
+    *theme_mode == ThemeMode::System
+}
+
+fn deserialize_theme_mode<'de, D>(deserializer: D) -> Result<ThemeMode, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value = Value::deserialize(deserializer)?;
+    Ok(value
+        .as_str()
+        .and_then(ThemeMode::parse)
+        .unwrap_or_else(default_theme_mode))
+}
+
 fn deserialize_windows_close_action<'de, D>(
     deserializer: D,
 ) -> Result<Option<CloseAction>, D::Error>
@@ -112,6 +158,13 @@ pub(crate) struct DesktopSettings {
         deserialize_with = "deserialize_plugin_ui_extension_grants"
     )]
     pub(crate) plugin_ui_extension_grants: Vec<String>,
+    #[serde(
+        rename = "themeMode",
+        default = "default_theme_mode",
+        deserialize_with = "deserialize_theme_mode",
+        skip_serializing_if = "is_default_theme_mode"
+    )]
+    pub(crate) theme_mode: ThemeMode,
     #[serde(flatten)]
     other: Map<String, Value>,
 }
@@ -125,6 +178,7 @@ impl Default for DesktopSettings {
             windows_close_action: None,
             plugin_ui_extensions_enabled: default_plugin_ui_extensions_enabled(),
             plugin_ui_extension_grants: Vec::new(),
+            theme_mode: default_theme_mode(),
             other: Map::new(),
         }
     }
@@ -262,6 +316,15 @@ pub(crate) fn write_desktop_setting(
     value: bool,
 ) -> Result<DesktopSettings, String> {
     update_desktop_settings(packaged_root_dir, |state| state.set(key, value))
+}
+
+pub(crate) fn write_theme_mode(
+    packaged_root_dir: Option<&Path>,
+    theme_mode: ThemeMode,
+) -> Result<DesktopSettings, String> {
+    update_desktop_settings(packaged_root_dir, |state| {
+        state.theme_mode = theme_mode;
+    })
 }
 
 #[cfg(any(windows, test))]
